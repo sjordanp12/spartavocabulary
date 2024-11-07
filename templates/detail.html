@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <meta property="og:title" content="My Personal Word List" />
+    <meta property="og:description" content="A collection of my words" />
+    <meta property="og:image" content="{{url_for('static', filename='logo_red.png')}}" />
+
+    <link rel="shortcut icon" href="{{url_for('static', filename='favico.ico')}}" type="image/x-icon" />
+    <link rel="icon" href="{{url_for('static', filename='favicon.ico')}}" type="image/x-icon" />
+    <title>Personal Vocab - Detail</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous" />
+    <script src="https://code.jquery.com/jquery-3.7.1.js" integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&family=Jost:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet" />
+    <!-- === My CSS -->
+    <link rel="stylesheet" href="{{url_for('static', filename='style.css')}}" />
+
+    <script>
+                              let word = '{{ word }}';
+                              $(document).ready(function () {
+                              get_examples();
+                              });
+
+                              // function get_definitions() {
+                              //   let api_key = 'c847ab1c-f9e6-4793-8322-e57581abecc1';
+                              //   let url = `https://www.dictionaryapi.com/api/v3/references/collegiate/json/${word}?key=${api_key}`;
+
+                              //   $.ajax({
+                              //     type: 'GET',
+                              //     url: url,
+                              //     data: {},
+                              //     success: function (response) {
+                              //       let def = response[0];
+
+                              //       let category = def.fl;
+                              //       let shortdef = def.shortdef[0];
+                              //       let date = def.date;
+
+                              //       let temp_html = `
+                              //                 <div style="padding: 10px">
+                              //                 <i>${category}</i>
+                              //                 <br />
+                              //                  ${shortdef}
+                              //                 <br />
+                              //                 <span class="example">${date}</span>
+                              //                </div>
+                              //                 `;
+                              //       let container = $('#definition');
+                              //       container.empty();
+                              //       container.append(temp_html);
+                              //     },
+                              //   });
+                              // }
+                              function save_word() {
+                                  let defs = {{ definitions | tojson }};
+                                  let data =  {
+                                      word_give: word,
+                                      definitions_give: defs,
+                                  }
+                                  $.ajax({
+                                      type: 'POST',
+                                      url: '/api/save_word',
+                                      data: JSON.stringify(data),
+                                      headers: {
+                                          'Content-Type': 'application/json',
+                                      },
+                                      success: function(response) {
+                                          if (response.result === 'success') {
+                                          //   Swal.fire({
+                                          //   title: "Good job!",
+                                          //   text: "Data berhasil disimpan dalam database.",
+                                          //   icon: "success",
+                                          //   timer: 1500
+                                          // });
+                                          Swal.fire({
+                                icon: 'success',
+                                title: 'Terimakasih',
+                                text: 'Kata {{word}} sudah masuk ke dalam database 😊.',
+                              }).then((result) => {
+                                if (result.isConfirmed) {
+                                  window.location.href = `/detail/${word}?status_give=old`;
+                                }
+                              }); } else {
+                                 alert('Something went wrong');
+                                         }
+                                      }
+                                  });
+                              }
+
+                            function delete_word() {
+                            $.ajax({
+                                type: 'POST',
+                                url: '/api/delete_word',
+                                data: {
+                                    word_give: word,
+                                },
+                                success: function(response) {
+                                    if (response.result === 'success') {
+                                      Swal.fire({
+                                      icon: 'success',
+                                      title: 'Terimakasih',
+                                      text: 'Kata {{ word }} sudah berhasil dihapus dari database 🗑.',
+                              }).then((result) => {
+                                if (result.isConfirmed) {
+                                  window.location.href = `/detail/${word}?status_give=new`;
+                                }
+                              });} else {
+                                        alert('Something went wrong...');
+                                    }
+                                }
+                            });
+                        }
+                        function get_examples() {
+                        let list =  $("#example-list");
+                        list.empty()
+                         $.ajax({
+                          type: "GET",
+                          url: `/api/get_exs?word=${word}`,
+                          data: {},
+                          success: function (response) {
+                              console.log(response)
+                              if (response.result === 'success'){
+                                let examples = response.examples;
+                                let temp_html =''
+                                for (let i = 0; i < examples.length; i++){
+                                  let example = examples[i];
+                                  let id = example.id;
+                                  let sentence = example.example;
+                                  temp_html +=  `
+                                  <li>
+                                    ${sentence}&nbsp;&nbsp;&nbsp;<a href="javascript:delete_ex('${id}')"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="red" class="bi bi-trash3" viewBox="0 0 16 16">
+                  <path
+                    d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5M11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47M8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5"
+                  />
+                </svg></a>
+                                    </li>
+                                  `;
+                                }
+                                list.append(temp_html)
+                              }
+                          }
+                      });
+                  }
+
+                  // function add_ex() {
+                  //     let new_ex = $('#new-example').val();
+                  //     console.log(new_ex)
+                  //     $.ajax({
+                  //         type: "POST",
+                  //         url: `/api/save_ex`,
+                  //         data: {
+                  //           example: new_ex,
+                  //           word: word,
+                  //         },
+                  //         success: function (response) {
+                  //             console.log(response)
+                  //             if (response.result === 'success'){
+                  //               Swal.fire({
+                  //                     icon: 'success',
+                  //                     title: 'Terimakasih',
+                  //                     text: 'contoh kalimat dari kata {{ word }} sudah berhasil ditambahkan ke dalam database.',
+                  //             })
+                  //               $('#new-example').val("");
+                  //             }
+                  //             get_examples()
+                  //         }
+                  //     });
+
+
+                  // }
+                  function add_ex() {
+          let new_ex = $('#new-example').val().trim(); // trim() untuk menghapus spasi di awal/akhir input
+
+          // Cek apakah input kosong
+          if (new_ex === "") {
+            Swal.fire({
+                    icon: 'error',
+                    title: 'Warning',
+                    text: 'Ketik sesuatu dulu baru klik add 😡',
+                     })
+              return; // Hentikan eksekusi fungsi jika input kosong
+          }
+
+          // Jika input tidak kosong, jalankan AJAX
+          $.ajax({
+              type: "POST",
+              url: "/api/save_ex",
+              data: {
+                  example: new_ex,
+                  word: word,
+              },
+              success: function (response) {
+                  console.log(response);
+                  if (response.result === 'success') {
+                    Swal.fire({
+                    icon: 'success',
+                    title: 'Terimakasih',
+                    text: 'contoh kalimat dari kata {{ word }} sudah berhasil ditambahkan ke dalam database 😊.',
+                     })
+
+                      // Kosongkan input setelah berhasil
+                      $('#new-example').val("");
+
+                      // Panggil fungsi untuk memperbarui daftar contoh
+                      get_examples();
+                  }
+              }
+          });
+      }
+
+
+            //     $("#addButton").click(function() {
+            //     // Ambil nilai input
+            //     var inputField = $("#new-example").val();
+
+            //     // Proses penyimpanan nilai input (tambahkan sesuai logika Anda)
+            //     // ...
+
+            //     // Setelah proses selesai, kosongkan input field
+            //     $("#new-example").val("");
+            // });
+
+
+                  function delete_ex(id) {
+                      console.log("deleting", id)
+                      $.ajax({
+                          type: "POST",
+                          url: `/api/delete_ex`,
+                          data: {
+                              word: word,
+                              id: id
+                          },
+                          success: function (response) {
+                            if (response.result === 'success'){
+                              // alert(response.msg)
+                              Swal.fire({
+                                      icon: 'success',
+                                      title: 'Terimakasih',
+                                      text: 'contoh kalimat dari kata {{ word }} sudah berhasil dihapus dari database 🗑.',
+                              })
+                            }
+                              get_examples()
+                          }
+                      });
+                  }
+    </script>
+  </head>
+  <body>
+    <!-- <h1>Hello, world! - {{ word }}</h1> -->
+    <div class="intro">
+      <h1 class="display-5 fw-bolder text-center m-5">Introduction</h1>
+      <hr />
+      <p class="text-center m-3">
+        <span class="fw-bold">Sparta Vocabulary</span> merupakan tempat di mana kamu dapat mencari definisi dari suatu kata dalam bahasa inggris. <br /><span class="fw-bold">Sparta Vocabulary</span> juga menyediakan fitur save dan delete.
+        Dalam hal ini, tombol simpan akan muncul apabila kata yang kamu masukkan belum disimpan ke dalam database. Namun, apabila kata tersebut sudah disimpan dalam database, maka hanya ada tombol delete untuk menghapus.<span
+          class="fw-bold"
+          >Sparta Vocabulary</span
+        >
+        dikembangkan dengan teknologi framework populer saat ini yaitu, Flask milik bahasa pemrograman Python dan <span class="fw-bold"> Sparta Vocabulary</span> juga terkoneksi dengan database NoSQL yaitu, MongoDB. Di mana seluruh data
+        kompleks dan bervariasi dapat disimpan dengan baik. <span class="fw-bold">Sparta Vocabulary</span> juga terintegrasi dengan API, agar setiap kata yang kamu masukkan dapat diterjemahkan dengan baik.
+      </p>
+    </div>
+    <div class="wrap col-md-4 col-lg-4 mb-2 mx-auto">
+      <div class="banner" onclick="window.location.href = '/'"></div>
+      <div class="container border border-secondary p-5 rounded-3">
+        <div class="d-flex justify-content-between align-items-end">
+          <div>
+            <h1 id="word" style="display: inline">{{ word }}</h1>
+          </div>
+        </div>
+        <hr />
+        <div id="definition">
+          {% for def in definitions %} {% set category = def.fl %} {% set shortdef = def.shortdef[0] %} {% set date = def.date %}
+          <div style="padding: 10px">
+            <i>{{category}}</i>
+            <br />
+            {{shortdef}}
+            <br />
+            <span class="example">{{date}}</span>
+          </div>
+          {% endfor %}
+        </div>
+        <hr />
+
+        {% if status == 'new' %}
+        <button id="btn-save" onclick="save_word()" class="btn btn-outline-success">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-floppy m-1" viewBox="0 0 16 16">
+            <path d="M11 2H9v3h2z" />
+            <path
+              d="M1.5 0h11.586a1.5 1.5 0 0 1 1.06.44l1.415 1.414A1.5 1.5 0 0 1 16 2.914V14.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 14.5v-13A1.5 1.5 0 0 1 1.5 0M1 1.5v13a.5.5 0 0 0 .5.5H2v-4.5A1.5 1.5 0 0 1 3.5 9h9a1.5 1.5 0 0 1 1.5 1.5V15h.5a.5.5 0 0 0 .5-.5V2.914a.5.5 0 0 0-.146-.353l-1.415-1.415A.5.5 0 0 0 13.086 1H13v4.5A1.5 1.5 0 0 1 11.5 7h-7A1.5 1.5 0 0 1 3 5.5V1H1.5a.5.5 0 0 0-.5.5m3 4a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 .5-.5V1H4zM3 15h10v-4.5a.5.5 0 0 0-.5-.5h-9a.5.5 0 0 0-.5.5z"
+            />
+          </svg>
+          SAVE
+        </button>
+        {% else %}
+        <button id="btn-delete" onclick="delete_word()" class="btn btn-danger">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash3" viewBox="0 0 16 16">
+            <path
+              d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5M11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47M8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5"
+            />
+          </svg>
+          DELETE
+        </button>
+        {% endif %}
+      </div>
+    </div>
+    <div id="examples" class="container">
+      <h3 style="text-align: center; margin-bottom: 1rem">Write your own sentences!</h3>
+      <ul id="example-list"></ul>
+      <div class="d-flex justify-content-between" style="margin-left: 20px">
+        <input id="new-example" class="form-control form-control-sm" style="margin-right: 0.5rem" required />
+        <button id="addButton" class="btn btn-outline-success btn-sm" onclick="add_ex()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clipboard2-check-fill" viewBox="0 0 16 16">
+            <path d="M10 .5a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5.5.5 0 0 1-.5.5.5.5 0 0 0-.5.5V2a.5.5 0 0 0 .5.5h5A.5.5 0 0 0 11 2v-.5a.5.5 0 0 0-.5-.5.5.5 0 0 1-.5-.5" />
+            <path
+              d="M4.085 1H3.5A1.5 1.5 0 0 0 2 2.5v12A1.5 1.5 0 0 0 3.5 16h9a1.5 1.5 0 0 0 1.5-1.5v-12A1.5 1.5 0 0 0 12.5 1h-.585q.084.236.085.5V2a1.5 1.5 0 0 1-1.5 1.5h-5A1.5 1.5 0 0 1 4 2v-.5q.001-.264.085-.5m6.769 6.854-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 9.793l2.646-2.647a.5.5 0 0 1 .708.708"
+            />
+          </svg>
+        </button>
+      </div>
+    </div>
+    <!-- Footer -->
+    <footer class="bg-body-tertiary text-center">
+      <!-- Grid container -->
+      <!-- <div class="container p-4"></div> -->
+      <!-- Grid container -->
+
+      <!-- Copyright -->
+      <div class="text-center p-3" style="background-color: rgba(0, 0, 0, 0.05)">
+        © 2024 Copyright:
+        <a class="text-body" href="/">Home Page</a>
+      </div>
+      <!-- Copyright -->
+    </footer>
+    <!-- End Footer -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  </body>
+</html>
